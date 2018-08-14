@@ -13,6 +13,7 @@ dependencies:
   flutter_cache_manager:
     git:
       url: git://github.com/wr-dh/flutter_cache_manager
+      ref: 0.1.1-dh
 
 dev_dependencies:
   test: ^0.12.0
