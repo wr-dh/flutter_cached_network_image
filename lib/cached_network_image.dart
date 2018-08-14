@@ -232,8 +232,12 @@ class _CachedNetworkImageState extends State<CachedNetworkImage>
   @override
   void initState() {
     _hasError = false;
-    _imageProvider = new CachedNetworkImageProvider(widget.imageUrl,
-        headers: widget.httpHeaders, errorListener: _imageLoadingFailed);
+    _imageProvider = new CachedNetworkImageProvider(
+      widget.imageUrl,
+      headers: widget.httpHeaders,
+      errorListener: _imageLoadingFailed,
+      cacheUrlParameters: widget.cacheUrlParameters,
+    );
     _imageResolver =
         new _ImageProviderResolver(state: this, listener: _updatePhase);
 
