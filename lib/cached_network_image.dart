@@ -44,6 +44,7 @@ class CachedNetworkImage extends StatefulWidget {
     this.alignment: Alignment.center,
     this.repeat: ImageRepeat.noRepeat,
     this.matchTextDirection: false,
+    this.cacheUrlParameters: true,
     this.httpHeaders,
   })  : assert(imageUrl != null),
         assert(fadeOutDuration != null),
@@ -141,6 +142,10 @@ class CachedNetworkImage extends StatefulWidget {
   /// If this is true, there must be an ambient [Directionality] widget in
   /// scope.
   final bool matchTextDirection;
+
+  /// True [default] caches the entire url
+  /// False caches only up to the url parameters
+  final bool cacheUrlParameters;
 
   // Optional headers for the http request of the image url
   final Map<String, String> httpHeaders;
@@ -267,8 +272,11 @@ class _CachedNetworkImageState extends State<CachedNetworkImage>
     super.didUpdateWidget(oldWidget);
     if (widget.imageUrl != oldWidget.imageUrl ||
         widget.placeholder != widget.placeholder) {
-      _imageProvider = new CachedNetworkImageProvider(widget.imageUrl,
-          errorListener: _imageLoadingFailed);
+      _imageProvider = new CachedNetworkImageProvider(
+        widget.imageUrl,
+        errorListener: _imageLoadingFailed,
+        cacheUrlParameters: widget.cacheUrlParameters,
+      );
 
       _resolveImage();
     }
@@ -433,9 +441,13 @@ class CachedNetworkImageProvider
     extends ImageProvider<CachedNetworkImageProvider> {
   /// Creates an ImageProvider which loads an image from the [url], using the [scale].
   /// When the image fails to load [errorListener] is called.
-  const CachedNetworkImageProvider(this.url,
-      {this.scale: 1.0, this.errorListener, this.headers})
-      : assert(url != null),
+  const CachedNetworkImageProvider(
+    this.url, {
+    this.scale: 1.0,
+    this.errorListener,
+    this.headers,
+    this.cacheUrlParameters,
+  })  : assert(url != null),
         assert(scale != null);
 
   /// Web url of the image to load
@@ -449,6 +461,12 @@ class CachedNetworkImageProvider
 
   // Set headers for the image provider, for example for authentication
   final Map<String, String> headers;
+
+  final bool cacheUrlParameters;
+
+  static String cachePathOnly(String url) {
+    return url.split('?')[0];
+  }
 
   @override
   Future<CachedNetworkImageProvider> obtainKey(
@@ -469,7 +487,11 @@ class CachedNetworkImageProvider
 
   Future<ui.Codec> _loadAsync(CachedNetworkImageProvider key) async {
     var cacheManager = await CacheManager.getInstance();
-    var file = await cacheManager.getFile(url, headers: headers);
+    var file = await cacheManager.getFile(
+      url,
+      headers: headers,
+      keyGenerator: cacheUrlParameters ? (i) => i : cachePathOnly,
+    );
     if (file == null) {
       if (errorListener != null) errorListener();
       throw new Exception("Couldn't download or retreive file.");
